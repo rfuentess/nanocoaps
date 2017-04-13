@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 #define COAP_PORT               (5683)
+#define COAPS_PORT              (20220)
 #define NANOCOAP_URL_MAX        (64)
 
 #define COAP_OPT_URI_HOST       (3)

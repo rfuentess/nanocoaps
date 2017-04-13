@@ -90,6 +90,11 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
     sock_udp_t sock;
     sock_udp_ep_t remote;
 
+    /* 
+     *  TODO: Create two threads: One for CoAP and one for CoAPS
+     *  A standrad server should be able to get non-secure requests
+     *  toghether to secure requests. 
+     */
     if (!local->port) {
         local->port = COAP_PORT;
     }
