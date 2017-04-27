@@ -6,6 +6,10 @@
 #include "nanocoap_sock.h"
 #include "net/sock/udp.h"
 
+#include "dtls.h"
+#include "dtls_debug.h"
+#include "tinydtls.h"
+
 #if NANOCOAP_DEBUG
 #define ENABLE_DEBUG (1)
 #else
