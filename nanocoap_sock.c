@@ -14,6 +14,8 @@
 #include "debug.h"
 
 extern ssize_t init_dtls(sock_udp_t * sock);
+extern void dtls_handle_read_sock(dtls_context_t *ctx, uint8_t *packet,
+                                                            size_t size);
 
 ssize_t nanocoap_get(sock_udp_ep_t *remote, const char *path, uint8_t *buf, size_t len)
 {
@@ -92,7 +94,10 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
 {
     sock_udp_t sock;
     sock_udp_ep_t remote;
-
+    dtls_context_t *dtls_context = NULL;
+    
+    dtls_init(); /*TinyDTLS mandatory settings*/
+    
     /* 
      *  TODO: Create two threads: One for CoAP and one for CoAPS
      *  A standrad server should be able to get non-secure requests
@@ -114,7 +119,7 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
     }
     
     while(1) {
-        res = sock_udp_recv(&sock, buf, bufsize, -1, &remote);
+        ssize_t res = sock_udp_recv(&sock, buf, bufsize, -1, &remote);
         
         /*TODO: This should be more exhaustive */
         if (res == -1) {
@@ -123,7 +128,7 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
         }
         else {
           DEBUG("DBG-Server: Record Rcvd!\n");
-          dtls_handle_read_sock(dtls_context, respuesta, res_size );
+          dtls_handle_read_sock(dtls_context, (uint8_t*)buf, bufsize );
         }
     }/* While(1) */
 
