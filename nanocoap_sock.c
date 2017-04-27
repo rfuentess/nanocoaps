@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "nanocoap.h"
+#include "nanocoap_sock.h"
 #include "net/sock/udp.h"
 
 #if NANOCOAP_DEBUG
@@ -11,6 +12,8 @@
 #define ENABLE_DEBUG (0)
 #endif
 #include "debug.h"
+
+extern ssize_t init_dtls(sock_udp_t * sock);
 
 ssize_t nanocoap_get(sock_udp_ep_t *remote, const char *path, uint8_t *buf, size_t len)
 {
@@ -96,7 +99,7 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
      *  toghether to secure requests. 
      */
     if (!local->port) {
-        local->port = COAP_PORT;
+        local->port = COAPS_PORT;
     }
 
     ssize_t res = sock_udp_create(&sock, local, NULL, 0);
@@ -104,23 +107,25 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
         return -1;
     }
 
+
+    res = init_dtls(&sock);
+    if (res == -1){
+      return -1;
+    }
+    
     while(1) {
         res = sock_udp_recv(&sock, buf, bufsize, -1, &remote);
+        
+        /*TODO: This should be more exhaustive */
         if (res == -1) {
             DEBUG("error receiving UDP packet\n");
             return -1;
         }
         else {
-            coap_pkt_t pkt;
-            if (coap_parse(&pkt, (uint8_t*)buf, res) < 0) {
-                DEBUG("error parsing packet\n");
-                continue;
-            }
-            if ((res = coap_handle_req(&pkt, buf, bufsize)) > 0) {
-                res = sock_udp_send(&sock, buf, res, &remote);
-            }
+          DEBUG("DBG-Server: Record Rcvd!\n");
+          dtls_handle_read_sock(dtls_context, respuesta, res_size );
         }
-    }
+    }/* While(1) */
 
     return 0;
 }
