@@ -17,9 +17,10 @@
 #endif
 #include "debug.h"
 
-extern ssize_t init_dtls(sock_udp_t * sock);
+extern dtls_context_t * init_dtls(sock_udp_t * sock);
 extern void dtls_handle_read_sock(dtls_context_t *ctx, uint8_t *packet,
                                                             size_t size);
+extern sock_udp_ep_t remote_host;
 
 ssize_t nanocoap_get(sock_udp_ep_t *remote, const char *path, uint8_t *buf, size_t len)
 {
@@ -97,9 +98,8 @@ out:
 int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
 {
     sock_udp_t sock;
-    sock_udp_ep_t remote;
     dtls_context_t *dtls_context = NULL;
-    
+
     dtls_init(); /*TinyDTLS mandatory settings*/
     
     /* 
@@ -108,30 +108,32 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
      *  toghether to secure requests. 
      */
     if (!local->port) {
-        local->port = COAPS_PORT;
+        local->port = COAP_PORT;
     }
+
+    DEBUG("Listening to port %i",local->port );
 
     ssize_t res = sock_udp_create(&sock, local, NULL, 0);
     if (res == -1) {
         return -1;
     }
 
-
-    res = init_dtls(&sock);
-    if (res == -1){
+    dtls_context = init_dtls(&sock);
+    
+    if (!dtls_context){
       return -1;
     }
-    
+
     while(1) {
-        ssize_t res = sock_udp_recv(&sock, buf, bufsize, -1, &remote);
-        
+       ssize_t res = sock_udp_recv(&sock, buf, bufsize, -1, &remote_host);
+
         /*TODO: This should be more exhaustive */
         if (res == -1) {
             DEBUG("error receiving UDP packet\n");
             return -1;
         }
         else {
-          DEBUG("DBG-Server: Record Rcvd!\n");
+          DEBUG("UDP packet Rcvd!\n");
           dtls_handle_read_sock(dtls_context, (uint8_t*)buf, bufsize );
         }
     }/* While(1) */
