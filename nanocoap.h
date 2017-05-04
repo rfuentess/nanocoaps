@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "net/sock/udp.h"
+
 #define COAP_PORT               (5683)
 #define COAPS_PORT              (20220)
 #define NANOCOAP_URL_MAX        (64)
@@ -127,6 +129,12 @@
 #define COAP_MAX_RETRANSMIT     (4)
 #define COAP_NSTART             (1)
 #define COAP_DEFAULT_LEISURE    (5)
+
+typedef struct {
+  sock_udp_t *sock;
+  sock_udp_ep_t *remote;
+} dtls_remote_peer_t;
+
 
 typedef struct {
     uint8_t ver_t_tkl;

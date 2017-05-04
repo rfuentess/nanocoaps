@@ -17,10 +17,9 @@
 #endif
 #include "debug.h"
 
-extern dtls_context_t * init_dtls(sock_udp_t * sock);
+extern dtls_context_t * init_dtls(dtls_remote_peer_t * remote_peer);
 extern void dtls_handle_read_sock(dtls_context_t *ctx, uint8_t *packet,
                                                             size_t size);
-extern sock_udp_ep_t remote_host;
 
 ssize_t nanocoap_get(sock_udp_ep_t *remote, const char *path, uint8_t *buf, size_t len)
 {
@@ -99,16 +98,21 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
 {
     sock_udp_t sock;
     dtls_context_t *dtls_context = NULL;
-
-    dtls_init(); /*TinyDTLS mandatory settings*/
+    sock_udp_ep_t remote;
+    dtls_remote_peer_t remote_peer;
     
-    /* 
-     *  TODO: Create two threads: One for CoAP and one for CoAPS
+    remote_peer.sock = &sock;
+    remote_peer.remote = &remote;
+        
+    dtls_init(); /*TinyDTLS mandatory settings*/
+
+    /*
+     *  TODO: Create two threads: One for CoAP and another for CoAPS
      *  A standrad server should be able to get non-secure requests
-     *  toghether to secure requests. 
+     *  toghether to secure requests.
      */
     if (!local->port) {
-        local->port = COAP_PORT;
+        local->port = COAPS_PORT;
     }
 
     DEBUG("Listening to port %i",local->port );
@@ -118,22 +122,20 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
         return -1;
     }
 
-    dtls_context = init_dtls(&sock);
-    
+    dtls_context = init_dtls(&remote_peer);
+
     if (!dtls_context){
       return -1;
     }
 
     while(1) {
-       ssize_t res = sock_udp_recv(&sock, buf, bufsize, -1, &remote_host);
-
+        ssize_t res = sock_udp_recv(&sock, buf, bufsize, -1, &remote);
         /*TODO: This should be more exhaustive */
         if (res == -1) {
             DEBUG("error receiving UDP packet\n");
             return -1;
         }
         else {
-          DEBUG("UDP packet Rcvd!\n");
           dtls_handle_read_sock(dtls_context, (uint8_t*)buf, bufsize );
         }
     }/* While(1) */
