@@ -100,10 +100,10 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
     dtls_context_t *dtls_context = NULL;
     sock_udp_ep_t remote;
     dtls_remote_peer_t remote_peer;
-    
+
     remote_peer.sock = &sock;
     remote_peer.remote = &remote;
-        
+
     dtls_init(); /*TinyDTLS mandatory settings*/
 
     /*
@@ -129,14 +129,14 @@ int nanocoap_server(sock_udp_ep_t *local, uint8_t *buf, size_t bufsize)
     }
 
     while(1) {
-        ssize_t res = sock_udp_recv(&sock, buf, bufsize, -1, &remote);
+        ssize_t res = sock_udp_recv(&sock, buf, bufsize, SOCK_NO_TIMEOUT, &remote);
         /*TODO: This should be more exhaustive */
         if (res == -1) {
             DEBUG("error receiving UDP packet\n");
             return -1;
         }
         else {
-          dtls_handle_read_sock(dtls_context, (uint8_t*)buf, bufsize );
+          dtls_handle_read_sock(dtls_context, (uint8_t*)buf, res );
         }
     }/* While(1) */
 
